@@ -25,6 +25,26 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateTask(
+    int index, {
+    required String title,
+    String description = '',
+    DateTime? dueDate,
+    required String priority,
+    required String category,
+  }) {
+    final task = _box.getAt(index);
+    if (task != null) {
+      task.title = title;
+      task.description = description;
+      task.dueDate = dueDate;
+      task.priority = priority;
+      task.category = category;
+      task.save();
+      notifyListeners();
+    }
+  }
+
   void toggleTask(int index) {
     final task = _box.getAt(index);
     if (task != null) {
