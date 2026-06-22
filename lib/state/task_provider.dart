@@ -26,40 +26,34 @@ class TaskProvider extends ChangeNotifier {
   }
 
   void updateTask(
-    int index, {
+    Task task, {
     required String title,
     String description = '',
     DateTime? dueDate,
     required String priority,
     required String category,
   }) {
-    final task = _box.getAt(index);
-    if (task != null) {
-      task.title = title;
-      task.description = description;
-      task.dueDate = dueDate;
-      task.priority = priority;
-      task.category = category;
-      task.save();
-      notifyListeners();
-    }
-  }
-
-  void toggleTask(int index) {
-    final task = _box.getAt(index);
-    if (task != null) {
-      task.isDone = !task.isDone;
-      task.save();
-      notifyListeners();
-    }
-  }
-
-  void deleteTask(int index) {
-    _box.deleteAt(index);
+    task.title = title;
+    task.description = description;
+    task.dueDate = dueDate;
+    task.priority = priority;
+    task.category = category;
+    task.save();
     notifyListeners();
   }
 
-  Future<void> showEditDialog(BuildContext context, Task task, int index) async {
+  void toggleTask(Task task) {
+    task.isDone = !task.isDone;
+    task.save();
+    notifyListeners();
+  }
+
+  void deleteTask(Task task) {
+    task.delete();
+    notifyListeners();
+  }
+
+  Future<void> showEditDialog(BuildContext context, Task task) async {
     final titleController = TextEditingController(text: task.title);
     final descriptionController = TextEditingController(text: task.description);
     DateTime? selectedDueDate = task.dueDate;
@@ -180,7 +174,7 @@ class TaskProvider extends ChangeNotifier {
                     if (updatedTitle.isEmpty) return;
 
                     updateTask(
-                      index,
+                      task,
                       title: updatedTitle,
                       description: descriptionController.text.trim(),
                       dueDate: selectedDueDate,
