@@ -147,11 +147,6 @@ class _TaskListPageState extends State<TaskListPage> {
                       children: [
                         Text(_sortLabel(_activeSort)),
                         const SizedBox(width: 4),
-                        // Icon(
-                        //   _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                        //   size: 16,
-                        // ),
-                        const SizedBox(width: 4),
                         InkWell(
                           onTap: () {
                             setState(() => _sortAscending = !_sortAscending);
