@@ -7,8 +7,20 @@ class TaskProvider extends ChangeNotifier {
 
   List<Task> get tasks => _box.values.toList();
 
-  void addTask(String title) {
-    final task = Task(title: title);
+  void addTask(
+    String title, {
+    String description = '',
+    DateTime? dueDate,
+    String priority = 'Normal',
+    String category = 'General',
+  }) {
+    final task = Task(
+      title: title,
+      description: description,
+      dueDate: dueDate,
+      priority: priority,
+      category: category,
+    );
     _box.add(task);
     notifyListeners();
   }
