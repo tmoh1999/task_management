@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../models/task.dart';
@@ -5,7 +6,30 @@ import '../models/task.dart';
 class TaskProvider extends ChangeNotifier {
   final Box<Task> _box = Hive.box<Task>('tasks');
 
+  String _searchQuery = '';
+  Timer? _searchDebounce;
+
   List<Task> get tasks => _box.values.toList();
+
+  /// Returns tasks filtered by the current debounced search query.
+  List<Task> get filteredTasks {
+    final q = _searchQuery.toLowerCase();
+    if (q.isEmpty) return tasks;
+    return tasks.where((t) => t.title.toLowerCase().contains(q)).toList();
+  }
+
+  /// Sets the search query with a short debounce to avoid frequent rebuilds.
+  void setSearchQuery(String query) {
+    // Cancel previous timer
+    _searchDebounce?.cancel();
+    // Start a new debounce timer
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _searchQuery = query;
+      notifyListeners();
+    });
+  }
+
+  String get searchQuery => _searchQuery;
 
   void addTask(
     String title, {

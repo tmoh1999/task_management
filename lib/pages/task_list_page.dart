@@ -19,6 +19,7 @@ class _TaskListPageState extends State<TaskListPage> {
   TaskFilter _activeFilter = TaskFilter.all;
   SortOption _activeSort = SortOption.dueDate;
   bool _sortAscending = true;
+  final TextEditingController _searchController = TextEditingController();
 
   String _formatDueDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -61,6 +62,12 @@ class _TaskListPageState extends State<TaskListPage> {
     return filtered;
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   String _filterLabel(TaskFilter filter) {
     switch (filter) {
       case TaskFilter.pending:
@@ -84,7 +91,7 @@ class _TaskListPageState extends State<TaskListPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TaskProvider>();
-    final tasks = _applyFilterAndSort(provider.tasks);
+    final tasks = _applyFilterAndSort(provider.filteredTasks);
 
     return Scaffold(
       appBar: AppBar(
@@ -100,6 +107,28 @@ class _TaskListPageState extends State<TaskListPage> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) => provider.setSearchQuery(v),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: provider.searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          provider.setSearchQuery('');
+                        },
+                      )
+                    : null,
+                hintText: 'Search by title',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                isDense: true,
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
