@@ -104,6 +104,167 @@ class _TaskPageState extends State<TaskPage> {
     });
   }
 
+  Future<void> _showEditTaskDialog(Task task, int index) async {
+    final titleController = TextEditingController(text: task.title);
+    final descriptionController = TextEditingController(text: task.description);
+    DateTime? selectedDueDate = task.dueDate;
+    String selectedPriority = task.priority;
+    String selectedCategory = task.category;
+
+    final now = DateTime.now();
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            return AlertDialog(
+              title: const Text('Edit task'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Task title',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: descriptionController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
+                      minLines: 2,
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedPriority,
+                      decoration: const InputDecoration(
+                        labelText: 'Priority',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _priorities
+                          .map((priority) => DropdownMenuItem(
+                                value: priority,
+                                child: Text(priority),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          dialogSetState(() {
+                            selectedPriority = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _categories
+                          .map((category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          dialogSetState(() {
+                            selectedCategory = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDueDate ?? now,
+                                firstDate: DateTime(now.year - 5),
+                                lastDate: DateTime(now.year + 5),
+                              );
+                              if (picked != null) {
+                                dialogSetState(() {
+                                  selectedDueDate = picked;
+                                });
+                              }
+                            },
+                            child: Text(
+                              selectedDueDate == null
+                                  ? 'Select due date'
+                                  : 'Due: ${_formatDueDate(selectedDueDate!)}',
+                            ),
+                          ),
+                        ),
+                        if (selectedDueDate != null) ...[
+                          const SizedBox(width: 12),
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            tooltip: 'Remove due date',
+                            onPressed: () {
+                              dialogSetState(() {
+                                selectedDueDate = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final updatedTitle = titleController.text.trim();
+                    if (updatedTitle.isEmpty) return;
+
+                    Provider.of<TaskProvider>(context, listen: false).updateTask(
+                      index,
+                      title: updatedTitle,
+                      description: descriptionController.text.trim(),
+                      dueDate: selectedDueDate,
+                      priority: selectedPriority,
+                      category: selectedCategory,
+                    );
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Updated "$updatedTitle"')),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    titleController.dispose();
+    descriptionController.dispose();
+  }
+
   String _formatDueDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
@@ -308,10 +469,20 @@ class _TaskPageState extends State<TaskPage> {
                               ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () => provider.deleteTask(index),
-                            tooltip: 'Delete task',
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () => _showEditTaskDialog(task, index),
+                                tooltip: 'Edit task',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => provider.deleteTask(index),
+                                tooltip: 'Delete task',
+                              ),
+                            ],
                           ),
                         ),
                       );
