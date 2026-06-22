@@ -46,19 +46,66 @@ class TaskPage extends StatefulWidget {
 
 class _TaskPageState extends State<TaskPage> {
   final TextEditingController _taskController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  DateTime? _selectedDueDate;
+  String _selectedPriority = 'Normal';
+  String _selectedCategory = 'General';
+
+  static const List<String> _priorities = ['Low', 'Normal', 'High'];
+  static const List<String> _categories = [
+    'General',
+    'Work',
+    'Personal',
+    'Shopping',
+    'Health',
+  ];
 
   @override
   void dispose() {
     _taskController.dispose();
+    _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _pickDueDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDueDate ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDueDate = picked;
+      });
+    }
   }
 
   void _addTask() {
     final title = _taskController.text.trim();
     if (title.isEmpty) return;
 
-    Provider.of<TaskProvider>(context, listen: false).addTask(title);
+    Provider.of<TaskProvider>(context, listen: false).addTask(
+      title,
+      description: _descriptionController.text.trim(),
+      dueDate: _selectedDueDate,
+      priority: _selectedPriority,
+      category: _selectedCategory,
+    );
+
     _taskController.clear();
+    _descriptionController.clear();
+    setState(() {
+      _selectedDueDate = null;
+      _selectedPriority = 'Normal';
+      _selectedCategory = 'General';
+    });
+  }
+
+  String _formatDueDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -75,24 +122,98 @@ class _TaskPageState extends State<TaskPage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _taskController,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _addTask(),
-                    decoration: const InputDecoration(
-                      labelText: 'New task',
-                      hintText: 'Enter a task name',
-                      border: OutlineInputBorder(),
-                    ),
+                TextField(
+                  controller: _taskController,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Task title',
+                    hintText: 'Enter a task name',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _addTask,
-                  child: const Text('Add'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descriptionController,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Enter task details',
+                    border: OutlineInputBorder(),
+                  ),
+                  minLines: 2,
+                  maxLines: 4,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedPriority,
+                        decoration: const InputDecoration(
+                          labelText: 'Priority',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _priorities
+                            .map((priority) => DropdownMenuItem(
+                                  value: priority,
+                                  child: Text(priority),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedPriority = value;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _categories
+                            .map((category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(category),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedCategory = value;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _pickDueDate,
+                        child: Text(
+                          _selectedDueDate == null
+                              ? 'Select due date'
+                              : 'Due: ${_formatDueDate(_selectedDueDate!)}',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _addTask,
+                      child: const Text('Add'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -146,14 +267,46 @@ class _TaskPageState extends State<TaskPage> {
                             value: task.isDone,
                             onChanged: (_) => provider.toggleTask(index),
                           ),
-                          title: Text(
-                            task.title,
-                            style: task.isDone
-                                ? const TextStyle(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey,
-                                  )
-                                : null,
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                task.title,
+                                style: task.isDone
+                                    ? const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                        color: Colors.grey,
+                                      )
+                                    : const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              if (task.description.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  task.description,
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ],
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  Chip(
+                                    label: Text(task.priority),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  Chip(
+                                    label: Text(task.category),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  if (task.dueDate != null)
+                                    Chip(
+                                      label: Text('Due: ${_formatDueDate(task.dueDate!)}'),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                ],
+                              ),
+                            ],
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline),
