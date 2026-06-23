@@ -27,8 +27,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          # Pin a concrete Flutter version to avoid channel resolution errors in the action
-          flutter-version: '3.12.2'
 
       - name: Install dependencies
         run: flutter pub get
