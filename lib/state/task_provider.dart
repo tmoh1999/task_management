@@ -8,6 +8,7 @@ class TaskProvider extends ChangeNotifier {
 
   String _searchQuery = '';
   Timer? _searchDebounce;
+  Task? _lastDeletedTask;
 
   List<Task> get tasks => _box.values.toList();
 
@@ -73,9 +74,20 @@ class TaskProvider extends ChangeNotifier {
   }
 
   void deleteTask(Task task) {
+    _lastDeletedTask = task;
     task.delete();
     notifyListeners();
   }
+
+  void restoreDeletedTask() {
+    if (_lastDeletedTask != null) {
+      _box.add(_lastDeletedTask!);
+      _lastDeletedTask = null;
+      notifyListeners();
+    }
+  }
+
+  Task? get lastDeletedTask => _lastDeletedTask;
 
   Future<void> showEditDialog(BuildContext context, Task task) async {
     final titleController = TextEditingController(text: task.title);

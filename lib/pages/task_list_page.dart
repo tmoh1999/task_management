@@ -233,7 +233,16 @@ class _TaskListPageState extends State<TaskListPage> {
                         onDismissed: (_) {
                           provider.deleteTask(task);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Deleted "${task.title}"')),
+                            SnackBar(
+                              content: Text('Deleted "${task.title}"'),
+                              action: SnackBarAction(
+                                label: 'Undo',
+                                onPressed: () {
+                                  provider.restoreDeletedTask();
+                                },
+                              ),
+                              duration: const Duration(seconds: 4),
+                            ),
                           );
                         },
                         child: ListTile(
