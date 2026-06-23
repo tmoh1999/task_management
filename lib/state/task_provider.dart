@@ -4,14 +4,17 @@ import 'package:hive/hive.dart';
 import '../models/task.dart';
 
 class TaskProvider extends ChangeNotifier {
-  final Box<Task> _box = Hive.box<Task>('tasks');
+  late final Box<Task> _box;
 
   String _searchQuery = '';
   Timer? _searchDebounce;
   Task? _lastDeletedTask;
 
   List<Task> get tasks => _box.values.toList();
-
+  
+  TaskProvider() {
+    _box = Hive.box<Task>('tasks');
+  }
   /// Returns tasks filtered by the current debounced search query.
   List<Task> get filteredTasks {
     final q = _searchQuery.toLowerCase();
